@@ -8,7 +8,7 @@ import logging
 from decimal import Decimal
 from typing import Any, Optional
 
-from src.models.order import Order, OrdersSerializedType
+from src.models.order import Order, OrderMatchType, OrdersSerializedType
 from src.models.token import (
     Token,
     TokenInfo,
@@ -154,6 +154,20 @@ class BatchAuction:
 
     def solve(self) -> None:
         """Solve Batch"""
+        print(self.orders)
+        for i in range(len(self.orders)-1):
+            for j in range(i+1, len(self.orders)):
+                order_i, order_j = self.orders[i], self.orders[j]
+                if order_i.match_type(order_j) == OrderMatchType.BOTH_FILLED and not (order_i.is_executed() or order_j.is_executed()):
+                    order_i.execute(buy_amount_value=order_j.sell_amount, sell_amount_value=order_j.buy_amount)
+                    order_j.execute(buy_amount_value=order_i.sell_amount, sell_amount_value=order_i.buy_amount)
+                    token_a = self.token_info(order_i.sell_token)
+                    token_b = self.token_info(order_i.buy_token)
+                    # This is the sellPrice for order i
+                    self.prices[token_a.token] = order_i.sell_amount
+                    # This is the buyPrice for order i
+                    self.prices[token_b.token] = order_i.buy_amount
+                    return ; 
 
     #################################
     #  SOLUTION PROCESSING METHODS  #

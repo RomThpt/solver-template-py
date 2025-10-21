@@ -15,6 +15,7 @@ from pydantic import BaseSettings
 
 from src.models.batch_auction import BatchAuction
 from src.models.solver_args import SolverArgs
+from src.util.numbers import decimal_to_str
 from src.util.schema import (
     BatchAuctionModel,
     SettledBatchAuctionModel,
@@ -74,16 +75,14 @@ async def solve(problem: BatchAuctionModel, request: Request):  # type: ignore
     print("Parameters Supplied", solver_args)
 
     # 1. Solve BatchAuction: update batch_auction with
-    # batch.solve()
+    batch.solve()
 
     trivial_solution = {
-        "orders": {},
+        "ref_token": batch.ref_token.value,
+        "orders": {order.order_id: order.as_dict() for order in batch.orders if order.is_executed()},
         "foreign_liquidity_orders": [],
         "amms": {},
-        "prices": {},
-        "approvals": [],
-        "interaction_data": [],
-        "score": "0",
+        "prices": {str(key): decimal_to_str(value) for key, value in batch.prices.items()},
     }
 
     print("\n\n*************\n\nReturning solution: " + str(trivial_solution))
